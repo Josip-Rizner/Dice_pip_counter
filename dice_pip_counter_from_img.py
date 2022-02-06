@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-path = "images/img13.jpg"
+path = "images/img7.jpg"
 
 def showImg(img):
     img = cv2.resize(img, (800, 700))
@@ -21,13 +21,13 @@ def getDiceContours(thresh_img, original_img, result_image, pipDetector):
             pipCount += getPips(thresh_img[y:y+h, x:x+w], y, x+w, pipDetector, result_image)     
     return pipCount
   
-def getPips(img, y, x, pipDetector, result_image):
+def getPips(dice_img, y, x, pipDetector, result_image):
     #img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     #img_blur = cv2.GaussianBlur(img_gray, (7,7), 5)
     #_, thresh = cv2.threshold(img_blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU) 
-    cv2.imshow("pips", img)
+    cv2.imshow("Dice img", dice_img)
     cv2.waitKey(0)
-    keypoints = pipDetector.detect(img)
+    keypoints = pipDetector.detect(dice_img)
     numberOfKeypoitns = len(keypoints)
     cv2.putText(result_image, str(numberOfKeypoitns), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255))
     return numberOfKeypoitns
@@ -56,9 +56,9 @@ original_img = cv2.imread(path)
 showImg(original_img)
 result_image = original_img.copy()
 img_gray = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
-showImg(img_gray)
+#showImg(img_gray)
 img_blur = cv2.GaussianBlur(img_gray, (7,7), 5)
-showImg(img_blur)
+#showImg(img_blur)
 _, thresh = cv2.threshold(img_blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
 if(isBlackDominantColorInTheBinaryImage(thresh)==False):
@@ -68,11 +68,11 @@ if(isBlackDominantColorInTheBinaryImage(thresh)==False):
 pipDetector = getPipDetector()
 pips = getDiceContours(thresh, original_img, result_image, pipDetector)
 
-cv2.putText(result_image, str(pips), (0,result_image.shape[0]-5), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0))
+cv2.putText(result_image, "Score: "+str(pips), (0,result_image.shape[0]-5), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0))
 
 showImg(thresh)
 showImg(result_image)
-print(pips)
+print("Pips detected: ",pips)
 
 cv2.destroyAllWindows()
 
