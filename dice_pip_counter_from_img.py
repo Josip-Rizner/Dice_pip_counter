@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-path = "images/img1.jpg"
+path = "images/img13.jpg"
 
 def showImg(img):
     img = cv2.resize(img, (800, 700))
