@@ -15,20 +15,32 @@ def getDiceContours(thresh_img, original_img, result_image, pipDetector):
         par = cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, 0.02*par, True)
         x, y, w, h = cv2.boundingRect(approx)
-        
+                
         if((w)*(h) > thresh_img.shape[0]*thresh_img.shape[1]*0.01):
             cv2.rectangle(result_image, (x, y), (x + w, y + h), (0, 255, 0), 5)
-            pipCount += getPips(thresh_img[y:y+h, x:x+w], y, x+w, pipDetector, result_image)     
+            pipCount += getPips(original_img[y:y+h, x:x+w], y, x+w, pipDetector, result_image)
+            
     return pipCount
+
+
   
 def getPips(dice_img, y, x, pipDetector, result_image):
-    #img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #img_blur = cv2.GaussianBlur(img_gray, (7,7), 5)
-    #_, thresh = cv2.threshold(img_blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU) 
-    cv2.imshow("Dice img", dice_img)
+    dice_img_gray = cv2.cvtColor(dice_img, cv2.COLOR_BGR2GRAY)
+    dice_img_blur = cv2.GaussianBlur(dice_img_gray, (7,7), 5)
+    _, dice_img_thresh = cv2.threshold(dice_img_blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    if(isBlackDominantColorInTheBinaryImage(dice_img_thresh)==True):
+            dice_img_thresh = 255 - dice_img_thresh
+            
+    cv2.imshow("Dice img", dice_img_thresh)
     cv2.waitKey(0)
-    keypoints = pipDetector.detect(dice_img)
+    keypoints = pipDetector.detect(dice_img_thresh)
     numberOfKeypoitns = len(keypoints)
+    
+    if(numberOfKeypoitns==0):
+        dice_img_thresh = 255 - dice_img_thresh
+        keypoints = pipDetector.detect(dice_img_thresh)
+        numberOfKeypoitns = len(keypoints)
+        
     cv2.putText(result_image, str(numberOfKeypoitns), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255))
     return numberOfKeypoitns
 
@@ -56,21 +68,22 @@ original_img = cv2.imread(path)
 showImg(original_img)
 result_image = original_img.copy()
 img_gray = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
-#showImg(img_gray)
 img_blur = cv2.GaussianBlur(img_gray, (7,7), 5)
-#showImg(img_blur)
-_, thresh = cv2.threshold(img_blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+showImg(img_blur)
 
-if(isBlackDominantColorInTheBinaryImage(thresh)==False):
-    thresh = 255 - thresh
-    #_, thresh = cv2.threshold(img_blur, 210, 245, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
+thresholded_img = cv2.adaptiveThreshold(img_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 1)
+showImg(thresholded_img)
+
+if(isBlackDominantColorInTheBinaryImage(thresholded_img)==False):
+    thresholded_img = 255 - thresholded_img
+
+showImg(thresholded_img)
 pipDetector = getPipDetector()
-pips = getDiceContours(thresh, original_img, result_image, pipDetector)
+pips = getDiceContours(thresholded_img, original_img, result_image, pipDetector)
 
 cv2.putText(result_image, "Score: "+str(pips), (0,result_image.shape[0]-5), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0))
 
-showImg(thresh)
 showImg(result_image)
 print("Pips detected: ",pips)
 
