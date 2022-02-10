@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-path = "images/img7.jpg"
+path = "images/img20.jpg"
 
 def showImg(img):
     img = cv2.resize(img, (800, 700))
@@ -28,14 +28,16 @@ def getPips(dice_img, y, x, pipDetector, result_image):
     dice_img_gray = cv2.cvtColor(dice_img, cv2.COLOR_BGR2GRAY)
     dice_img_blur = cv2.GaussianBlur(dice_img_gray, (7,7), 5)
     _, dice_img_thresh = cv2.threshold(dice_img_blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    #Blob Detector detects only black pips/blobs
     if(isBlackDominantColorInTheBinaryImage(dice_img_thresh)==True):
             dice_img_thresh = 255 - dice_img_thresh
-            
     cv2.imshow("Dice img", dice_img_thresh)
     cv2.waitKey(0)
     keypoints = pipDetector.detect(dice_img_thresh)
     numberOfKeypoitns = len(keypoints)
-    
+
+    #For cases when there is a lot of background on picture parts with dice
     if(numberOfKeypoitns==0):
         dice_img_thresh = 255 - dice_img_thresh
         keypoints = pipDetector.detect(dice_img_thresh)
@@ -62,24 +64,41 @@ def isBlackDominantColorInTheBinaryImage(img):
     if(white_pixels > black_pixels):
         return False
     return True
+
+def isWhiteDiceOnWhiteBackground(img):
+    white_pixels = np.count_nonzero(img>230)
+    if(white_pixels > img.shape[0]*img.shape[1]*0.8):
+        return True
+    return False
         
            
 original_img = cv2.imread(path)        
 showImg(original_img)
 result_image = original_img.copy()
 img_gray = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
-img_blur = cv2.GaussianBlur(img_gray, (7,7), 5)
-showImg(img_blur)
 
 
-thresholded_img = cv2.adaptiveThreshold(img_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 1)
-showImg(thresholded_img)
+#Check if the pictures contains white dice on white background 
+if(isWhiteDiceOnWhiteBackground(img_gray)):
+    img_blur = cv2.GaussianBlur(img_gray, (5,5), 2)
+    showImg(img_blur)
+    thresholded_img = cv2.adaptiveThreshold(img_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 1)
+    showImg(thresholded_img)
 
+else:   
+    img_blur = cv2.GaussianBlur(img_gray, (7,7), 5)
+    showImg(img_blur)
+    thresholded_img = cv2.adaptiveThreshold(img_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    showImg(thresholded_img)
+    
+    
+    
+    
 if(isBlackDominantColorInTheBinaryImage(thresholded_img)==False):
     thresholded_img = 255 - thresholded_img
-
 showImg(thresholded_img)
 pipDetector = getPipDetector()
+
 pips = getDiceContours(thresholded_img, original_img, result_image, pipDetector)
 
 cv2.putText(result_image, "Score: "+str(pips), (0,result_image.shape[0]-5), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0))
